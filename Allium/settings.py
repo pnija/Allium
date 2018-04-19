@@ -92,7 +92,7 @@ if DB_URL != False:
 
     db_from_env = dj_database_url.config()
     DATABASES['default'].update(db_from_env)
-    DEBUG = False
+    DEBUG = True
 else:
     print("-----DEBUG------")
     DATABASES = {
