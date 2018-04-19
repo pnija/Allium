@@ -14,6 +14,7 @@ django-rest-swagger==2.1.2
 djangorestframework==3.8.2
 djongo==1.2.24
 ez-setup==0.9
+gunicorn==19.7.1
 idna==2.6
 itypes==1.1.0
 Jinja2==2.10
