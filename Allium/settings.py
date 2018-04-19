@@ -9,9 +9,11 @@ https://docs.djangoproject.com/en/2.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
-
+import dj_database_url
 import os
 
+env = os.environ.copy()
+DB_URL = env.get('DATABASE_URL', False)
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, os.path.pardir))
@@ -80,12 +82,27 @@ WSGI_APPLICATION = 'Allium.wsgi.application'
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 # django.db.backends.sqlite3
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'dballium',
+
+if DB_URL != False:
+    DATABASES = { 
+        'default': { 
+            'ENGINE': 'django.db.backends.postgresql_psycopg2', 
+        }, 
     }
-}
+
+    db_from_env = dj_database_url.config()
+    DATABASES['default'].update(db_from_env)
+    DEBUG = False
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'djongo',
+            'NAME': 'allium__db',
+        }
+    }
+    DEBUG = True
+
+
 
 
 # Password validation
