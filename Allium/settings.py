@@ -25,7 +25,7 @@ SECRET_KEY = '@p^orf-()jw)^b-*#b9xid=g3z-bz$mue_3v$#02d=1s&%78d%'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [*]
 
 
 # Application definition
