@@ -93,6 +93,7 @@ if DB_URL != False:
     db_from_env = dj_database_url.config()
     DATABASES['default'].update(db_from_env)
     DEBUG = False
+    STATICFILES_DIRS = (os.path.join(BASE_DIR, 'staticfiles'),)
 else:
     DATABASES = {
         'default': {
@@ -101,6 +102,7 @@ else:
         }
     }
     DEBUG = True
+    STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
 
 
 
@@ -156,7 +158,7 @@ MEDIA_URL = '/media/'
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
+
 
 # For email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
