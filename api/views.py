@@ -25,7 +25,7 @@ class AuthTokenView(ObtainAuthToken):
 		serializer.is_valid(raise_exception=True)
 		user = serializer.validated_data['user']
 
-		# user_settings = UserSettings.objects.get_or_create(user=user)
+		# user_settings = UserSetting.objects.get_or_create(user=user)
 
 		# if user_settings.enable_2fa:
 		# 	status_2fa = authenticate_2fa(user)
