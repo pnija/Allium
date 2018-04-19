@@ -38,7 +38,7 @@ class UserProfile(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
 	user_type = models.ForeignKey(Group, on_delete=models.CASCADE)
 	country = models.ForeignKey(Country, on_delete=models.CASCADE)
-	full_name = models.CharField(max_length=10)
+	full_name = models.CharField(max_length=100)
 	mobile_number = models.CharField(max_length=10, null=False)
 	pincode = models.IntegerField(null=False)
 	street_address = models.CharField(max_length=300, null=False)
