@@ -1,0 +1,1 @@
+web: gunicorn Allium.wsgi --log-file -
