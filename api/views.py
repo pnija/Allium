@@ -26,11 +26,11 @@ class AuthTokenView(ObtainAuthToken):
 		serializer.is_valid(raise_exception=True)
 		user = serializer.validated_data['user']
 
-		# user_settings = UserSetting.objects.get_or_create(user=user)
+		user_settings = UserSetting.objects.get_or_create(user=user)
 
-		# if user_settings.enable_2fa:
-		# 	status_2fa = authenticate_2fa(user)
-		# 	return Response({})
+		if user_settings.enable_2fa:
+			status_2fa = authenticate_2fa(user)
+			return Response({})
 
 		token, created = Token.objects.get_or_create(user=user)
 
@@ -78,6 +78,7 @@ class UserTypeListViewSet(ModelViewSet):
 	queryset = Group.objects.all()
 	serializer_class = UserTypeSerializer
 	permission_classes = [AllowAny]
+	http_method_names = ['get']
 
 	def list(self, request, *args, **kwargs):
 		queryset = self.filter_queryset(self.get_queryset())
@@ -91,6 +92,7 @@ class CountryListViewSet(ModelViewSet):
 	queryset = Country.objects.all()
 	serializer_class = CountrySerializer
 	permission_classes = [AllowAny]
+	http_method_names = ['get']
 
 	def list(self, request, *args, **kwargs):
 		queryset = self.filter_queryset(self.get_queryset())
@@ -104,6 +106,7 @@ class StateListViewSet(ModelViewSet):
 	queryset = State.objects.all()
 	serializer_class = StateSerializer
 	permission_classes = [AllowAny]
+	http_method_names = ['get']
 
 	def get_queryset(self):
 		country_id = self.request.GET.get('country')
@@ -124,6 +127,7 @@ class RegisterUserProfileView(ModelViewSet):
 	queryset = UserProfile.objects.all()
 	serializer_class = UserProfileSerializer
 	permission_classes = [AllowAny]
+	http_method_names = ['post']
 
 	def create(self, request, *args, **kwargs):
 		serializer = self.get_serializer(data=request.data)
@@ -186,6 +190,7 @@ class ActivateAccountView(UpdateAPIView):
 	serializer_class = AccountActivationSerializer
 	permission_classes = [AllowAny]
 	model = User
+	http_method_names = ['put']
 
 	def update(self, request, *args, **kwargs):
 		serializer = self.get_serializer(data=request.data)
