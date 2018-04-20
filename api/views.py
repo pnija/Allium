@@ -26,11 +26,11 @@ class AuthTokenView(ObtainAuthToken):
 		serializer.is_valid(raise_exception=True)
 		user = serializer.validated_data['user']
 
-		user_settings = UserSetting.objects.get_or_create(user=user)
+		# user_settings = UserSetting.objects.get_or_create(user=user)
 
-		if user_settings.enable_2fa:
-			status_2fa = authenticate_2fa(user)
-			return Response({})
+		# if user_settings.enable_2fa:
+		# 	status_2fa = authenticate_2fa(user)
+		# 	return Response({})
 
 		token, created = Token.objects.get_or_create(user=user)
 
@@ -49,7 +49,6 @@ class EmailOneTimePassword(APIView):
 
 	def post(self, request, *args, **kwargs):
 		serializer = self.serializer_class(data=request.data, context={'request': request})
-		# import pdb; pdb.set_trace()
 		if serializer.is_valid():
 			otp = serializer.data.get("otp")
 			try:
