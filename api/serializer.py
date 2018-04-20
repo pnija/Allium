@@ -1,9 +1,9 @@
 from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
 
-from django.contrib.auth.models import User
-from api.models import UserProfile, OneTimePassword
-
+from django.contrib.auth.models import User, Group
+from api.models import UserProfile, OneTimePassword, Country, State
+import re
 
 class UserProfileSerializer(ModelSerializer):
 	first_name = serializers.CharField()
@@ -35,6 +35,12 @@ class UserProfileSerializer(ModelSerializer):
 		except User.DoesNotExist:
 			return value
 		raise serializers.ValidationError('This username is already in use.')
+
+	def validate_mobile_number(self, value):
+
+		if len(value) != 10:
+			raise serializers.ValidationError('Invalid Mobile number')
+		return value
 
 
 class AccountActivationSerializer(serializers.Serializer):
@@ -69,3 +75,27 @@ class EmailOTPSerializer(ModelSerializer):
 	class Meta:
 		model = OneTimePassword
 		fields = ['otp']
+
+
+class CountrySerializer(ModelSerializer):
+	"""
+	Serializer for Country.
+	"""
+	class Meta:
+		model = Country
+		fields = ['id','country']
+
+
+class StateSerializer(ModelSerializer):
+	class Meta:
+		model = State
+		fields = ('state',)
+
+
+class UserTypeSerializer(ModelSerializer):
+	"""
+	Serializer for User Groups.
+	"""
+	class Meta:
+		model = Group
+		fields = ['id','name']

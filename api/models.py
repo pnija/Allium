@@ -43,7 +43,7 @@ class UserProfile(models.Model):
 	pincode = models.IntegerField(null=False)
 	street_address = models.CharField(max_length=300, null=False)
 	landmark = models.CharField(max_length=100, null=False)
-	city = models.CharField(max_length=50)
+	city = models.CharField(max_length=50, null=True)
 	state = models.ForeignKey(State, on_delete=models.CASCADE)
 	activation_key = models.CharField(max_length=50)
 

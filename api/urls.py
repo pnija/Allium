@@ -1,10 +1,12 @@
 from django.conf.urls import url, include
 from .views import *
 from rest_framework import routers
-from api.views import AuthTokenView, Logout, EmailOneTimePassword, ActivateAccountView, ResetPassword
 
 router = routers.DefaultRouter()
 router.register('sign-up', RegisterUserProfileView, base_name='register-profile')
+router.register('usertype-list', UserTypeListViewSet, base_name='usertype-list')
+router.register('country-list', CountryListViewSet, base_name='country-list')
+router.register('get-states', StateListViewSet, base_name='states')
 
 urlpatterns = [
     url(r'^', include(router.urls)),

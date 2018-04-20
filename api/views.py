@@ -8,6 +8,7 @@ from rest_framework.generics import UpdateAPIView
 from rest_framework.authentication import TokenAuthentication
 from rest_framework import status
 from rest_framework.permissions import AllowAny
+from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST
 
 from django.contrib.auth.models import User
 from api.models import UserProfile, OneTimePassword, UserSetting
@@ -71,6 +72,52 @@ class Logout(APIView):
 	def get(self, request, format=None):
 		request.user.auth_token.delete()
 		return Response(status=status.HTTP_200_OK)
+
+
+class UserTypeListViewSet(ModelViewSet):
+	queryset = Group.objects.all()
+	serializer_class = UserTypeSerializer
+	permission_classes = [AllowAny]
+
+	def list(self, request, *args, **kwargs):
+		queryset = self.filter_queryset(self.get_queryset())
+		if not queryset:
+			return Response('No UserType found', status=HTTP_400_BAD_REQUEST)
+		serializer = self.get_serializer(queryset, many=True)
+		return Response(serializer.data)
+
+
+class CountryListViewSet(ModelViewSet):
+	queryset = Country.objects.all()
+	serializer_class = CountrySerializer
+	permission_classes = [AllowAny]
+
+	def list(self, request, *args, **kwargs):
+		queryset = self.filter_queryset(self.get_queryset())
+		if not queryset:
+			return Response('No Country found', status=HTTP_400_BAD_REQUEST)
+		serializer = self.get_serializer(queryset, many=True)
+		return Response(serializer.data)
+
+
+class StateListViewSet(ModelViewSet):
+	queryset = State.objects.all()
+	serializer_class = StateSerializer
+	permission_classes = [AllowAny]
+
+	def get_queryset(self):
+		country_id = self.request.GET.get('country')
+		if country_id:
+			self.queryset = State.objects.filter(country__id=country_id)
+			return self.queryset
+		return self.queryset
+
+	# def list(self, request, *args, **kwargs):
+	# 	queryset = self.filter_queryset(self.get_queryset())
+	# 	if not queryset:
+	# 		return Response('No rooms found', status=HTTP_400_BAD_REQUEST)
+	# 	serializer = self.get_serializer(queryset, many=True)
+	# 	return Response(serializer.data)
 
 
 class RegisterUserProfileView(ModelViewSet):
