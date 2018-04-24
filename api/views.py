@@ -63,6 +63,7 @@ class AuthTokenView(ObtainAuthToken):
 		serializer.is_valid(raise_exception=True)
 		user = serializer.validated_data['user']
 		user_settings, created = UserSetting.objects.get_or_create(user=user)
+		
 		if user_settings.enable_2fa:
 			status_2fa = authenticate_2fa(user)
 			return Response({
@@ -120,6 +121,7 @@ class EnableGoogleAuthView(GenericAPIView):
 	http_method_names = ['get']
 
 	def get(self, request):		
+		
 		try:
 			google_auth_object = GoogleAuthenticator.objects.get(user=request.user)
 		except GoogleAuthenticator.DoesNotExist:
@@ -135,6 +137,7 @@ class EnableGoogleAuthView(GenericAPIView):
 				user_setting =  UserSetting.objects.get(user = request.user)
 				user_setting.enable_2fa = True
 				user_setting.method_2fa = GOOGLE_AUTH
+				user_setting.save()
 			else:
 				UserSetting.objects.create(
 					user=request.user,
