@@ -1,9 +1,29 @@
 from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
+from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST
 
 from django.contrib.auth.models import User, Group
 from api.models import UserProfile, OneTimePassword, Country, State
 import re
+
+class CustomLoginSerializer(ModelSerializer):
+	email = serializers.CharField()
+	password = serializers.CharField()
+
+	class Meta:
+		model = User
+		fields = ['email', 'password']
+
+	def validate_email(self, value):
+
+		# Check to see usersexist with this email.
+		try:
+			user = User.objects.get(email=value)
+			return value
+		except User.DoesNotExist:
+			raise serializers.ValidationError( 'No user with this email ID '+str(value) )
+		return value
+
 
 class UserProfileSerializer(ModelSerializer):
 	first_name = serializers.CharField()
@@ -68,6 +88,23 @@ class ResetPasswordSerializer(serializers.Serializer):
 	new_password = serializers.CharField(required=True)
 
 
+class OTPSerializer(serializers.Serializer):
+	otp = serializers.CharField(required=True)
+	email = serializers.EmailField()
+
+	def validate_otp(self, value):
+		# otp validation
+		return value
+
+	def validate_email(self, value):
+		try:
+			user = User.objects.get(email=value)
+			return value
+		except User.DoesNotExist:
+			raise serializers.ValidationError('No user registered with this EmailID -"'+ value +'"' )
+		return value
+
+
 class EmailOTPSerializer(ModelSerializer):
 	"""
 	Serializer for 2FA Email .
@@ -89,7 +126,7 @@ class CountrySerializer(ModelSerializer):
 class StateSerializer(ModelSerializer):
 	class Meta:
 		model = State
-		fields = ('state',)
+		fields = ['state',]
 
 
 class UserTypeSerializer(ModelSerializer):

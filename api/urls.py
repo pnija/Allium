@@ -4,9 +4,10 @@ from rest_framework import routers
 
 router = routers.DefaultRouter()
 router.register('sign-up', RegisterUserProfileView, base_name='register-profile')
-# router.register('get-usertypes', UserTypeListViewSet, base_name='usertype-list')
+# router.register('login', AuthTokenView, base_name='token-authentication')
 # router.register('get-country-list', CountryListViewSet, base_name='country-list')
 # router.register('get-states', StateListViewSet, base_name='states')
+# url(r'^login/', AuthTokenView.as_view(), name='authentication'),
 
 urlpatterns = [
     url(r'^', include(router.urls)),
@@ -15,4 +16,8 @@ urlpatterns = [
     url(r'^logout/', Logout.as_view(), name='logout-view'),
     url(r'^reset-password/', ResetPassword.as_view(), name='reset-password'),
     url(r'^activate-account/', ActivateAccountView.as_view(), name='activate-account'),
+    url(r'^enable-google_auth/', EnableGoogleAuthView.as_view(), name='enable-google_auth'),
+    url(r'^disable-google_auth/', DisableGoogleAuthView.as_view(), name='disable-google_auth'),
+    url(r'^google-authentication/', VerifyGoogleAuthenticatorKey.as_view(), name='verify-otp-google_auth'),
+    # url(r'')
 ]

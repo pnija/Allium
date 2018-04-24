@@ -12,7 +12,7 @@ def send_verification_key(key, user):
 	except Exception as e:
 		print(e.strerror)
 		return  str(e.strerror)
-	return 'Account Activation code sent to your email address - '+ str(user.email) +'. Thnk you'
+	return 'Account Activation code sent to your email address - '+ str(user.email) +'. Thank you'
 
 
 def send_otp(otp_object, user):
@@ -23,14 +23,14 @@ def send_otp(otp_object, user):
 	except Exception as e:
 		print(e.strerror)
 		return  str(e.strerror)
-	return 'Your One Time Password(otp) send to your email'
+	return 'Your One Time Password(otp) send to your email ID : '+str(user.email)
 
 
 def authenticate_2fa(user):
 	user_setting = UserSetting.objects.get(user=user)
 	
 	if user_setting.method_2fa == GOOGLE_AUTH :
-		print('Google Auth')
+		return "Authenticate with Google Authenticator"
 	
 	elif user_setting.method_2fa == SMS_OTP:
 		print('SMS OTP')
@@ -40,7 +40,7 @@ def authenticate_2fa(user):
 		otp = uuid.uuid4().hex[:6].upper()
 
 		while True:
-			if OneTimePassword.objects.filter(email = cleaned_info['username']).exist():
+			if OneTimePassword.objects.filter(email = cleaned_info['username']).exists():
 				otp = uuid.uuid4().hex[:6].upper()
 			else:
 				break

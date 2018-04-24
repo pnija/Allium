@@ -153,11 +153,9 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Media settings
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media').replace('\\', '/')
 MEDIA_URL = '/media/'
-
 
 # For email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -173,3 +171,15 @@ EMAIL_HOST_PASSWORD = 'techversant'
 EMAIL_PORT = 587
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+# Swagger settings for Token Authentication
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'api_key': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization'
+        }
+    },
+}
