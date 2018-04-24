@@ -38,5 +38,4 @@ uritemplate==3.0.0
 urllib3==1.22
 dj-database-url
 psycopg2
-pydot==1.2.4
-
+pyotp==2.2.6
