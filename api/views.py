@@ -92,7 +92,6 @@ class Enable2faView(GenericAPIView):
 
 	def get(self, request, *args, **kwargs):
 		user = request.user
-		import pdb; pdb.set_trace()
 		method_2fa = self.kwargs.get('auth_method', '')
 
 		user_setting, created = UserSetting.objects.get_or_create(user = request.user)
