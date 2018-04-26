@@ -2,9 +2,9 @@ from django.db import models
 from django.contrib.auth.models import User, Group
 # Create your models here.
 
-GOOGLE_AUTH = 'GA'
-EMAIL_OTP = 'EO'
-SMS_OTP =  'SO'
+GOOGLE_AUTH = 'google_auth'
+EMAIL_OTP = 'email_otp'
+SMS_OTP =  'sms_otp'
 
 METHODS_2FA = (
 	(GOOGLE_AUTH,'Google Auth'),

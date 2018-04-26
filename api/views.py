@@ -18,7 +18,6 @@ from api.serializer import *
 from api.utils import send_verification_key, send_otp, authenticate_2fa
 import uuid
 import pyotp
-# from random import randint
 
 
 # class AuthTokenView(APIView):
@@ -88,6 +87,78 @@ class Logout(APIView):
 		return Response('Logout',status=status.HTTP_200_OK)
 
 
+class Enable2faView(GenericAPIView):
+	http_method_names = ['get']
+
+	def get(self, request, *args, **kwargs):
+		user = request.user
+		import pdb; pdb.set_trace()
+		method_2fa = self.kwargs.get('auth_method', '')
+
+		user_setting, created = UserSetting.objects.get_or_create(user = request.user)
+		user_setting.enable_2fa = True
+
+		if method_2fa == GOOGLE_AUTH:
+			user_setting.method_2fa = GOOGLE_AUTH
+			user_setting.save()
+
+			try:
+				google_auth_object = GoogleAuthenticator.objects.get(user=request.user)
+			except GoogleAuthenticator.DoesNotExist:
+				google_auth_object = None
+			
+			if not google_auth_object:
+				google_2fa_key = pyotp.random_base32()
+				google_auth_object = GoogleAuthenticator.objects.create(
+					user= request.user,
+					google_2fa_key=google_2fa_key)
+				return Response({
+					'status' : 'success',
+					'message' : 'Created new google verification key',
+					'Verification_key' : google_auth_object.google_2fa_key,
+					})
+			else:
+				return Response({
+					'status' : 'success',
+					'message' : 'You have existing verification key',
+					'Verification_key' : google_auth_object.google_2fa_key,
+					})
+
+		elif method_2fa == EMAIL_OTP:
+			user_setting.method_2fa = EMAIL_OTP
+			user_setting.save()
+
+			otp = uuid.uuid4().hex[:6].upper()
+
+			while True:
+				if OneTimePassword.objects.filter(otp = otp).exists():
+					otp = uuid.uuid4().hex[:6].upper()
+				else:
+					break
+
+			otp_object, created = OneTimePassword.objects.get_or_create(user=user)
+			otp_object.otp = otp
+			otp_object.save()
+			print(" ---------->  ", otp)
+			mail_status = send_otp(otp_object, user)
+			
+			return Response({
+				'status' : 'success',
+				'message' : mail_status
+				})
+
+		elif method_2fa == SMS_OTP:
+			return Response({
+				'status' : 'success',
+				'message' : 'Mobile SMS not available now'
+				})
+		else:
+			return Response({
+				'status' : 'failed',
+				'message' : 'Invalid input.'
+				})
+
+
 class DisableGoogleAuthView(GenericAPIView):
 	http_method_names = ['get']
 	def get(self, request):
@@ -99,7 +170,7 @@ class DisableGoogleAuthView(GenericAPIView):
 			google_auth_object = None
 
 		try:
-			user_setting =  UserSetting.objects.get(user = request.user)
+			user_setting = UserSetting.objects.get(user = request.user)
 			user_setting.delete()
 		except UserSetting.DoesNotExist:
 			user_setting = None
@@ -116,48 +187,7 @@ class DisableGoogleAuthView(GenericAPIView):
 				})
 
 
-
-class EnableGoogleAuthView(GenericAPIView):
-	http_method_names = ['get']
-
-	def get(self, request):		
-		
-		try:
-			google_auth_object = GoogleAuthenticator.objects.get(user=request.user)
-		except GoogleAuthenticator.DoesNotExist:
-			google_auth_object = None
-
-		if not google_auth_object:
-			google_2fa_key = pyotp.random_base32()
-			google_auth_object = GoogleAuthenticator.objects.create(
-				user= request.user,
-				google_2fa_key=google_2fa_key)
-
-			if UserSetting.objects.filter(user = request.user).exists():
-				user_setting =  UserSetting.objects.get(user = request.user)
-				user_setting.enable_2fa = True
-				user_setting.method_2fa = GOOGLE_AUTH
-				user_setting.save()
-			else:
-				UserSetting.objects.create(
-					user=request.user,
-					enable_2fa=True,
-					method_2fa=GOOGLE_AUTH)			
-			return Response({
-				'status' : 'success',
-				'message' : 'Created new google verification key',
-				'Verification_key' : google_auth_object. google_2fa_key,
-				})
-		else:
-			return Response({
-				'status' : 'success',
-				'message' : 'You have existing verification key',
-				'Verification_key' : google_auth_object.google_2fa_key,
-				})
-		return Response({ 'status': 'Request failed!'})
-
-
-class VerifyGoogleAuthenticatorKey(GenericAPIView):
+class Authenticate2faView(GenericAPIView):
 	serializer_class = OTPSerializer
 	permission_classes = [AllowAny]
 	http_method_names = ['post']
@@ -170,29 +200,55 @@ class VerifyGoogleAuthenticatorKey(GenericAPIView):
 			email = request.data.get('email')
 			otp_code = request.data.get('otp')
 			user = User.objects.get(email=email)
-			
-			try:
-				user_auth_object = GoogleAuthenticator.objects.get(user=user)				
-			except GoogleAuthenticator.DoesNotExist:
+			user_setting = UserSetting.objects.get(user=user)
+
+			if user_setting.method_2fa == GOOGLE_AUTH:
+				try:
+					user_auth_object = GoogleAuthenticator.objects.get(user=user)				
+				except GoogleAuthenticator.DoesNotExist:
+					return Response({
+						'status' : 'failed',
+						'message' : 'Please enable Google Authenticator',
+						})
+
+				google_2fa_key = user_auth_object.google_2fa_key
+				totp = pyotp.TOTP(google_2fa_key)
+
+				if totp.verify(otp_code):
+					token, created = Token.objects.get_or_create(user=user)
+					return Response({
+						'status' : 'success',
+						'message' : 'Succesfully authenticated with Google Authenticator',
+						'token': token.key,
+						})
 				return Response({
 					'status' : 'failed',
-					'message' : 'Please enable Google Authenticator',
+					'message' : 'Wrong OTP',
 					})
 
-			google_2fa_key = user_auth_object.google_2fa_key
-			totp = pyotp.TOTP(google_2fa_key)
-
-			if totp.verify(otp_code):
+			elif user_setting.method_2fa == EMAIL_OTP:
+				
+				try:
+					otp_object = OneTimePassword.objects.get(otp=otp_code, user=user)
+				except OneTimePassword.DoesNotExist:
+					return Response({
+						'status' : 'failed',
+						'message' : 'wrong OTP please try again!'
+						})
+				
 				token, created = Token.objects.get_or_create(user=user)
 				return Response({
 					'status' : 'success',
-					'message' : 'Succesfully authenticated with Google Authenticator',
 					'token': token.key,
+					'user_id': user.pk,
+					# 'email': user.email
 					})
-			return Response({
-				'status' : 'failed',
-				'message' : 'Wrong OTP',
-				})
+			else:
+				pass
+
+		return Response({
+			'status' : 'failed',
+			})
 
 
 class EmailOneTimePassword(APIView):
