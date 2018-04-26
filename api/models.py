@@ -53,7 +53,7 @@ class UserProfile(models.Model):
 class UserSetting(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
 	enable_2fa = models.BooleanField(default=False)
-	method_2fa = models.CharField(max_length=10, choices=METHODS_2FA, default=EMAIL_OTP)
+	method_2fa = models.CharField(max_length=20, choices=METHODS_2FA, default=EMAIL_OTP)
 
 class GoogleAuthenticator(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
