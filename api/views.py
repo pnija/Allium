@@ -286,15 +286,21 @@ class RegisterUserProfileView(ModelViewSet):
 			username = serializer.validated_data.pop('username')
 			email = serializer.validated_data.pop('email')
 			password = serializer.validated_data.pop('password')
+			user_type = serializer.validated_data.pop('user_type')
 			
 			user = User.objects.create_user(username=username,
 						email=email,
 						password=password)
-
 			user.first_name = first_name
 			user.last_name = last_name
 			user.is_active = False
 			user.save()
+
+			try:
+				group = Group.objects.get(name=user_type)
+				user.groups.add(group)
+			except Group.DoesNotExist:
+				pass
 
 			dict_data = serializer.validated_data.copy()
 			dict_data.update({'user' : user})
