@@ -369,7 +369,9 @@ class UpdateProfileView(ModelViewSet):
 		serializer = ProfileSerializer(instance, data=request.data, partial=True)
 		if serializer.is_valid():
 			serializer.save()
-		return Response('update')
+			serializer = self.get_serializer(userlist, many=True)
+			return Response(serializer.data)
+		return Response('Invalid Data.')
 
 
 class UserListView(GenericAPIView):
@@ -377,6 +379,7 @@ class UserListView(GenericAPIView):
 	serializer_class = ProfileSerializer
 
 	def get(self, request, *args, **kwargs):
+		user = request.user
 		if user.groups.filter(name=group_name).exists():
 			search_val = self.kwargs.get('search', '')
 			q1 = Q(user__first_name=search_val)
