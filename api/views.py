@@ -6,53 +6,21 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ViewSet
 from rest_framework.generics import UpdateAPIView, GenericAPIView
 from rest_framework.authentication import TokenAuthentication
-from rest_framework import status
+from rest_framework import status, generics
+# from django_filters import rest_framework as filters
+from rest_framework import filters
+
 from rest_framework.permissions import AllowAny
 from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST
-
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.db.models import Q
 from api.models import UserProfile, OneTimePassword, UserSetting, GoogleAuthenticator
 from api.models import GOOGLE_AUTH, EMAIL_OTP, SMS_OTP
 from api.serializer import *
 from api.utils import send_verification_key, send_otp, authenticate_2fa
 import uuid
 import pyotp
-
-
-# class AuthTokenView(APIView):
-# 	permission_classes = [AllowAny]
-# 	serializer_class = CustomLoginSerializer
-# 	http_method_names = ['post']
-
-# 	def post(self, request):
-
-# 		serializer = self.serializer_class(data=request.data, context={'request': request})
-# 		serializer.is_valid(raise_exception=True)
-# 		response = {}
-
-# 		email = request.data.get('email')
-# 		password = request.data.get('password')
-
-# 		if serializer.validated_data:
-# 			user = User.objects.get(email=email)
-# 			username = user.username
-# 			user = authenticate(username=username, password=password)			
-# 			if user:
-# 				if user.is_active:
-# 					response['status'] = 'success'
-# 					response['message'] = 'User logged in succesfully'
-# 					token, _ = Token.objects.get_or_create(user=user)
-# 					response['token'] = token.key
-# 					return Response(response, status=200)
-# 				else:
-# 					response['status'] = 'failed'
-# 					response['message'] = 'User not activated'
-# 					return Response(response, status=HTTP_401_UNAUTHORIZED)
-# 		response['status'] = 'failed'
-# 		response['message'] = 'Login failed'
-# 		return Response(response, status=HTTP_401_UNAUTHORIZED)
-
 
 class AuthTokenView(ObtainAuthToken):
 	permission_classes = [AllowAny]
@@ -158,23 +126,17 @@ class Enable2faView(GenericAPIView):
 				})
 
 
-class DisableGoogleAuthView(GenericAPIView):
+class Disable2faView(GenericAPIView):
 	http_method_names = ['get']
 	def get(self, request):
 		user = request.user
-		try:
-			google_auth_object = GoogleAuthenticator.objects.get(user=request.user)
-			google_auth_object.delete()
-		except GoogleAuthenticator.DoesNotExist:
-			google_auth_object = None
-
 		try:
 			user_setting = UserSetting.objects.get(user = request.user)
 			user_setting.delete()
 		except UserSetting.DoesNotExist:
 			user_setting = None
 		
-		if not (google_auth_object and user_setting is None):
+		if not (user_setting is None):
 			return Response({
 				'status' : 'failed',
 				'message' : 'User not yet enabled Google Athentication !'
@@ -182,7 +144,7 @@ class DisableGoogleAuthView(GenericAPIView):
 		else:
 			return Response({
 				'status' : 'success',
-				'message' : 'Disabled Google Athentication !'
+				'message' : 'Disabled 2FA.'
 				})
 
 
@@ -240,7 +202,6 @@ class Authenticate2faView(GenericAPIView):
 					'status' : 'success',
 					'token': token.key,
 					'user_id': user.pk,
-					# 'email': user.email
 					})
 			else:
 				pass
@@ -250,27 +211,21 @@ class Authenticate2faView(GenericAPIView):
 			})
 
 
-class EmailOneTimePassword(APIView):
-	serializer_class = EmailOTPSerializer
-	permission_classes = [AllowAny]
-	http_method_names = ['post']
+class UserProfileView(ModelViewSet):
+	queryset = UserProfile.objects.all()
+	serializer_class = UserProfileSerializer
+	http_method_names = ['get', 'patch']
 
-	def post(self, request, *args, **kwargs):
-		serializer = self.serializer_class(data=request.data, context={'request': request})
+	def get_object(self):
+		obj = User.objects.get(user=self.rquest.user)
+		return obj
+
+	def update(self, request, *args, **kwargs):
+		self.object = self.get_object()
+		serializer = self.get_serializer(data=request.data)
+
 		if serializer.is_valid():
-			otp = serializer.data.get("otp")
-			try:
-				otp_object = OneTimePassword.objects.get(otp=otp)
-				user = otp_object.user
-			except OneTimePassword.DoesNotExist:
-				return Response("wrong OTP please try again!")
-			token, created = Token.objects.get_or_create(user=user)
-			return Response({
-				'token': token.key,
-				'user_id': user.pk,
-				# 'status' : mail_status,
-				'email': user.email
-				})
+			return Response("Success.update")
 
 
 class UserTypeListViewSet(ModelViewSet):
@@ -314,13 +269,6 @@ class StateListViewSet(ModelViewSet):
 			return self.queryset
 		return self.queryset
 
-	# def list(self, request, *args, **kwargs):
-	# 	queryset = self.filter_queryset(self.get_queryset())
-	# 	if not queryset:
-	# 		return Response('No rooms found', status=HTTP_400_BAD_REQUEST)
-	# 	serializer = self.get_serializer(queryset, many=True)
-	# 	return Response(serializer.data)
-
 
 class RegisterUserProfileView(ModelViewSet):
 	queryset = UserProfile.objects.all()
@@ -333,18 +281,15 @@ class RegisterUserProfileView(ModelViewSet):
 		serializer.is_valid(raise_exception=True)
 
 		if serializer.validated_data:
-			first_name = serializer.validated_data.pop('first_name')
-			last_name = serializer.validated_data.pop('last_name')
+			first_name = serializer.validated_data.pop('first_name', '')
+			last_name = serializer.validated_data.pop('last_name', '')
 			username = serializer.validated_data.pop('username')
 			email = serializer.validated_data.pop('email')
 			password = serializer.validated_data.pop('password')
-
-			try:
-				user = User.objects.create_user(username=username,
-							email=email,
-							password=password)
-			except:			
-				user = User.objects.get(username=username)
+			
+			user = User.objects.create_user(username=username,
+						email=email,
+						password=password)
 
 			user.first_name = first_name
 			user.last_name = last_name
@@ -408,3 +353,51 @@ class ActivateAccountView(UpdateAPIView):
 				user.save()			
 				return Response("Account Activated Succesfully.", status=status.HTTP_200_OK)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UpdateProfileView(ModelViewSet):
+	queryset = UserProfile.objects.all()
+	serializer_class = ProfileSerializer
+	http_method_names = ['get', 'patch']
+
+	def get_queryset(self):
+		return UserProfile.objects.filter(user=self.request.user)
+
+	def update(self, request, *args, **kwargs):
+		user = self.request.user
+		instance = UserProfile.objects.get(user=user)
+		serializer = ProfileSerializer(instance, data=request.data, partial=True)
+		if serializer.is_valid():
+			serializer.save()
+		return Response('update')
+
+
+class UserListView(GenericAPIView):
+	http_method_names = ['get']
+	serializer_class = ProfileSerializer
+
+	def get(self, request, *args, **kwargs):
+		if user.groups.filter(name=group_name).exists():
+			search_val = self.kwargs.get('search', '')
+			q1 = Q(user__first_name=search_val)
+			q2 = Q(user__last_name=search_val)
+			q3 = Q(user__email=search_val)
+			q4 = Q(mobile_number=search_val)
+
+			try:
+				value = int(search_val)
+				q5 = Q(pincode=value)
+			except ValueError:
+				q5 = Q(pincode=0)
+
+			q6 = Q(street_address=search_val)
+			q7 = Q(landmark=search_val)
+			q8 = Q(city=search_val)
+			query = q1|q2|q3|q4|q5|q6|q7|q8
+			userlist = UserProfile.objects.filter(query)
+			serializer = self.get_serializer(userlist, many=True)
+			return Response(serializer.data)
+		else:
+			return Response({
+				'You have no permissions to view user details'
+				})

@@ -6,6 +6,32 @@ from django.contrib.auth.models import User, Group
 from api.models import UserProfile, OneTimePassword, Country, State
 import re
 
+
+class CountrySerializer(ModelSerializer):
+	"""
+	Serializer for Country.
+	"""
+	class Meta:
+		model = Country
+		fields = ['id','country']
+
+
+class StateSerializer(ModelSerializer):
+	class Meta:
+		model = State
+		fields = ['state',]
+
+
+class UserTypeSerializer(ModelSerializer):
+	"""
+	Serializer for User Groups.
+	"""
+	class Meta:
+		model = Group
+		fields = ['id','name']
+
+
+
 class CustomLoginSerializer(ModelSerializer):
 	email = serializers.CharField()
 	password = serializers.CharField()
@@ -26,12 +52,13 @@ class CustomLoginSerializer(ModelSerializer):
 
 
 class UserProfileSerializer(ModelSerializer):
-	first_name = serializers.CharField()
-	last_name = serializers.CharField()
+	first_name = serializers.CharField(required=False)
+	last_name = serializers.CharField(required=False)
 	username = serializers.CharField()
 	email = serializers.EmailField()
 	password = serializers.CharField()
-	# user = serializers.IntegerField()
+	user_type = serializers.CharField(source='user_type.name',required=False)
+
 
 	class Meta:
 		model = UserProfile
@@ -56,11 +83,11 @@ class UserProfileSerializer(ModelSerializer):
 			return value
 		raise serializers.ValidationError('This username is already in use.')
 
-	def validate_mobile_number(self, value):
+	# def validate_mobile_number(self, value):
 
-		if len(value) != 10:
-			raise serializers.ValidationError('Invalid Mobile number')
-		return value
+	# 	if len(value) != 10:
+	# 		raise serializers.ValidationError('Invalid Mobile number')
+	# 	return value
 
 
 class AccountActivationSerializer(serializers.Serializer):
@@ -114,25 +141,60 @@ class EmailOTPSerializer(ModelSerializer):
 		fields = ['otp']
 
 
-class CountrySerializer(ModelSerializer):
-	"""
-	Serializer for Country.
-	"""
+
+
+class UserSerializer(serializers.ModelSerializer):
+	first_name = serializers.CharField()
+	last_name = serializers.CharField()
+	email = serializers.EmailField(required=True,)
+	username = serializers.CharField()
+	password = serializers.CharField(min_length=8,allow_null=True ,required=False)
+
 	class Meta:
-		model = Country
-		fields = ['id','country']
+		model = User
+		fields = ('first_name', 'last_name', 'username', 'email', 'password')
 
 
-class StateSerializer(ModelSerializer):
+class ProfileSerializer(ModelSerializer):
+	
+	user = UserSerializer()
+
 	class Meta:
-		model = State
-		fields = ['state',]
+		model = UserProfile
+		fields = ['id', 'user', 'user_type', 'country', 'mobile_number', 'pincode', 'street_address',
+			'landmark', 'city', 'state' ]
+		depth = 1
 
+	def update(self, instance, validated_data):
+		user_data = validated_data.pop('user')
+		user = instance.user
+		user.first_name = user_data.get('first_name', user.first_name)
+		user.last_name = user_data.get('last_name', user.first_name)
+		user.email = user_data.get('email', user.email)
+		user.username = user_data.get('email', user.username)
+		user.save()
+		return instance
+		
+	def validate_email(self, value):
 
-class UserTypeSerializer(ModelSerializer):
-	"""
-	Serializer for User Groups.
-	"""
-	class Meta:
-		model = Group
-		fields = ['id','name']
+		# Check to see if any users already exist with this email as a username.
+		try:
+			match = User.objects.get(email=value)
+		except User.DoesNotExist:
+			return value
+		raise serializers.ValidationError('This email address is already in use.')
+
+	def validate_username(self, value):
+
+		# Check to see if any users already exist with this email as a username.
+		try:
+			match = User.objects.get(username=value)
+		except User.DoesNotExist:
+			return value
+		raise serializers.ValidationError('This username is already in use.')
+
+	def validate_mobile_number(self, value):
+
+		if len(value) != 10:
+			raise serializers.ValidationError('Invalid Mobile number')
+		return value

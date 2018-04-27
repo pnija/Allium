@@ -26,6 +26,7 @@ class State(models.Model):
 	def __str__(self):
 		return ("{}").format(self.state)
 
+
 class OneTimePassword(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
 	otp = models.CharField(null=False, unique=True, max_length=10)
@@ -36,24 +37,29 @@ class OneTimePassword(models.Model):
 
 class UserProfile(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
-	user_type = models.ForeignKey(Group, on_delete=models.CASCADE)
-	country = models.ForeignKey(Country, on_delete=models.CASCADE)
-	full_name = models.CharField(max_length=100)
-	mobile_number = models.CharField(max_length=10, null=False)
-	pincode = models.IntegerField(null=False)
-	street_address = models.CharField(max_length=300, null=False)
-	landmark = models.CharField(max_length=100, null=False)
+	user_type = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
+	country = models.ForeignKey(Country, on_delete=models.CASCADE, null=True)
+	full_name = models.CharField(max_length=100, null=True)
+	mobile_number = models.CharField(max_length=10, null=True)
+	pincode = models.IntegerField(null=True)
+	street_address = models.CharField(max_length=300, null=True)
+	landmark = models.CharField(max_length=100, null=True)
 	city = models.CharField(max_length=50, null=True)
-	state = models.ForeignKey(State, on_delete=models.CASCADE)
-	activation_key = models.CharField(max_length=50)
+	state = models.ForeignKey(State, on_delete=models.CASCADE, null=True)
+	activation_key = models.CharField(max_length=50, null=True)
 
 	def __str__(self):
 		return ("{}").format(self.full_name)
+
 
 class UserSetting(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
 	enable_2fa = models.BooleanField(default=False)
 	method_2fa = models.CharField(max_length=20, choices=METHODS_2FA, default=EMAIL_OTP)
+
+	def __str__(self):
+		return ("{}, {}").format(self.user, self.google_2fa_key)
+
 
 class GoogleAuthenticator(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
