@@ -380,7 +380,7 @@ class UserListView(GenericAPIView):
 
 	def get(self, request, *args, **kwargs):
 		user = request.user
-		if user.groups.filter(name=group_name).exists():
+		if user.groups.filter(name='Customer').exists():
 			search_val = self.kwargs.get('search', '')
 			q1 = Q(user__first_name=search_val)
 			q2 = Q(user__last_name=search_val)
