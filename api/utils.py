@@ -1,13 +1,18 @@
 from django.conf import settings
 from django.core.mail import EmailMessage
+from django.core.mail import send_mail
 from api.models import UserSetting, OneTimePassword
 from api.models import GOOGLE_AUTH, EMAIL_OTP, SMS_OTP
 import uuid
 
 
 def send_verification_key(key, user):
-	email = EmailMessage('Activate Your Account', "Your verification code is: "+str(key), settings.DEFAULT_FROM_EMAIL, (user.email,))
+	body = "Your verification code is: "+str(key)
+	subject = 'Allium Account Verification'
+	email = EmailMessage(subject, body, settings.DEFAULT_FROM_EMAIL, (user.email,))
 	email.content_subtype = 'html'
+
+	# send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email,])
 	try:
 		email.send()
 	except Exception as e:
@@ -16,9 +21,12 @@ def send_verification_key(key, user):
 	return 'Account Activation code sent to your email address - '+ str(user.email) +'. Thank you'
 
 
-def send_otp(otp_object, user):
-	email = EmailMessage('Your One Time Password is '+str(otp_object.otp), settings.DEFAULT_FROM_EMAIL, (user.email,))
+def send_otp(otp_object, user):	
+	body = 'Your One Time Password is '+str(otp_object.otp)
+	subject = 'Allium One Time Password(OTP)'
+	email = EmailMessage(subject, body, settings.DEFAULT_FROM_EMAIL, (user.email,))
 	email.content_subtype = 'html'
+
 	try:
 		email.send()
 	except Exception as e:

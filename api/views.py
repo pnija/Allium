@@ -19,8 +19,10 @@ from api.models import UserProfile, OneTimePassword, UserSetting, GoogleAuthenti
 from api.models import GOOGLE_AUTH, EMAIL_OTP, SMS_OTP
 from api.serializer import *
 from api.utils import send_verification_key, send_otp, authenticate_2fa
+from api.custom_permissions.customer_permissions import CustomerAccessPermission
 import uuid
 import pyotp
+
 
 class AuthTokenView(ObtainAuthToken):
 	permission_classes = [AllowAny]
@@ -35,14 +37,15 @@ class AuthTokenView(ObtainAuthToken):
 			status_2fa = authenticate_2fa(user)
 			return Response({
 				'status' : 'success',
-				'message' : status_2fa
+				'message' : status_2fa,
+				'user_id' : user.pk
 				})
 		else:
 			token, created = Token.objects.get_or_create(user=user)
 			return Response({
+				'status' : 'success',
 				'token': token.key,
 				'user_id': user.pk,
-				# 'status' : mail_status,
 				'email': user.email
 				})
 
@@ -132,19 +135,20 @@ class Disable2faView(GenericAPIView):
 		user = request.user
 		try:
 			user_setting = UserSetting.objects.get(user = request.user)
-			user_setting.delete()
+			user_setting.enable_2fa = False
+			user_setting.save()
 		except UserSetting.DoesNotExist:
-			user_setting = None
+			user_setting = ''
 		
-		if not (user_setting is None):
-			return Response({
-				'status' : 'failed',
-				'message' : 'User not yet enabled Google Athentication !'
-				})
-		else:
+		if user_setting:
 			return Response({
 				'status' : 'success',
 				'message' : 'Disabled 2FA.'
+				})
+		else:			
+			return Response({
+				'status' : 'failed',
+				'message' : 'User not yet enabled Google Athentication !'
 				})
 
 
@@ -158,9 +162,9 @@ class Authenticate2faView(GenericAPIView):
 		serializer.is_valid(raise_exception=True)
 		
 		if serializer.validated_data:
-			email = request.data.get('email')
+			user_id = request.data.get('user_id')
 			otp_code = request.data.get('otp')
-			user = User.objects.get(email=email)
+			user = User.objects.get(pk=user_id)
 			user_setting = UserSetting.objects.get(user=user)
 
 			if user_setting.method_2fa == GOOGLE_AUTH:
@@ -367,6 +371,9 @@ class UpdateProfileView(ModelViewSet):
 	http_method_names = ['get', 'patch']
 
 	def get_queryset(self):
+		pk = self.kwargs['pk']
+		if pk:
+			return UserProfile.objects.filter(id=pk)
 		return UserProfile.objects.filter(user=self.request.user)
 
 	def update(self, request, *args, **kwargs):
@@ -375,7 +382,7 @@ class UpdateProfileView(ModelViewSet):
 		serializer = ProfileSerializer(instance, data=request.data, partial=True)
 		if serializer.is_valid():
 			serializer.save()
-			serializer = self.get_serializer(userlist, many=True)
+			serializer = self.get_serializer([instance], many=True)
 			return Response(serializer.data)
 		return Response('Invalid Data.')
 
@@ -383,6 +390,7 @@ class UpdateProfileView(ModelViewSet):
 class UserListView(GenericAPIView):
 	http_method_names = ['get']
 	serializer_class = ProfileSerializer
+	permission_classes = [CustomerAccessPermission]
 
 	def get(self, request, *args, **kwargs):
 		user = request.user

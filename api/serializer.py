@@ -117,18 +117,18 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 class OTPSerializer(serializers.Serializer):
 	otp = serializers.CharField(required=True)
-	email = serializers.EmailField()
+	user_id = serializers.IntegerField(required=True)
 
 	def validate_otp(self, value):
 		# otp validation
 		return value
 
-	def validate_email(self, value):
+	def validate_user_id(self, value):
 		try:
-			user = User.objects.get(email=value)
+			user = User.objects.get(pk=value)
 			return value
 		except User.DoesNotExist:
-			raise serializers.ValidationError('No user registered with this EmailID -"'+ value +'"' )
+			raise serializers.ValidationError('No user exist with this ID -"'+ value +'"' )
 		return value
 
 

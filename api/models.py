@@ -58,7 +58,7 @@ class UserSetting(models.Model):
 	method_2fa = models.CharField(max_length=20, choices=METHODS_2FA, default=EMAIL_OTP)
 
 	def __str__(self):
-		return ("{}, {}").format(self.user, self.google_2fa_key)
+		return ("{}, {}, {}").format(self.user, self.method_2fa, self.enable_2fa)
 
 
 class GoogleAuthenticator(models.Model):

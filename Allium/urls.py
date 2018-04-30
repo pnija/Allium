@@ -18,13 +18,16 @@ from django.conf.urls.static import static
 from django.conf.urls import url, include
 from django.contrib import admin
 from rest_framework_swagger.views import get_swagger_view
+# from api.views import schema_view
 
-schema_view = get_swagger_view(title='Pastebin API')
+schema_view = get_swagger_view(title="Allium API'S")
 
 urlpatterns = [
 	url(r'^$', schema_view),
     url(r'^admin/', admin.site.urls),
     url(r'^account/', include('api.urls')),
     url(r'^query/', include('api.query_urls')),
+    url(r'^profile/', include('api.profile_urls')),
+    url(r'^search/', include('api.search_urls')),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

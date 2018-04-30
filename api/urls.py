@@ -13,6 +13,6 @@ urlpatterns = [
     url(r'^disable-2fa/', Disable2faView.as_view(), name='disable-2fa'),
     url(r'^authentication-2fa/', Authenticate2faView.as_view(), name='auth-2fa'),
     url(r'^reset-password/', ResetPassword.as_view(), name='reset-password'),
-    url(r'^activate-account/', ActivateAccountView.as_view(), name='activate-account'),
-    url(r'^users/(?P<search>[\w\+]+)$', UserListView.as_view(), name='search-users'),
+    url(r'^activate-account/', ActivateAccountView.as_view(), name='activate-account'),    
+    # url(r'^users/(?P<search>[\w\+]+)$', UserListView.as_view(), name='search-users'),
 ]
