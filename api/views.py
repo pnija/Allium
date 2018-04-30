@@ -114,7 +114,8 @@ class Enable2faView(GenericAPIView):
 			
 			return Response({
 				'status' : 'success',
-				'message' : mail_status
+				'message' : mail_status,
+				'user_id' : user.id
 				})
 
 		elif method_2fa == SMS_OTP:
@@ -371,7 +372,7 @@ class UpdateProfileView(ModelViewSet):
 	http_method_names = ['get', 'patch']
 
 	def get_queryset(self):
-		pk = self.kwargs['pk']
+		pk = self.kwargs.get('pk', '')
 		if pk:
 			return UserProfile.objects.filter(id=pk)
 		return UserProfile.objects.filter(user=self.request.user)

@@ -173,6 +173,12 @@ class ProfileSerializer(ModelSerializer):
 		user.email = user_data.get('email', user.email)
 		user.username = user_data.get('email', user.username)
 		user.save()
+		instance.mobile_number = validated_data.get('mobile_number', instance.mobile_number)
+		instance.pincode = validated_data.get('pincode', instance.pincode)
+		instance.street_address = validated_data.get('street_address', instance.street_address)
+		instance.landmark = validated_data.get('landmark', instance.landmark)
+		instance.city = validated_data.get('city', instance.city)
+		instance.save()
 		return instance
 		
 	def validate_email(self, value):
