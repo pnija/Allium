@@ -26,6 +26,7 @@ class UserTypeSerializer(ModelSerializer):
 	"""
 	Serializer for User Groups.
 	"""
+	name = serializers.CharField()
 	class Meta:
 		model = Group
 		fields = ['id','name']
@@ -158,6 +159,7 @@ class UserSerializer(serializers.ModelSerializer):
 class ProfileSerializer(ModelSerializer):
 	
 	user = UserSerializer()
+	user_type = UserTypeSerializer()
 
 	class Meta:
 		model = UserProfile
@@ -168,6 +170,15 @@ class ProfileSerializer(ModelSerializer):
 	def update(self, instance, validated_data):
 		user_data = validated_data.pop('user')
 		user = instance.user
+
+		user_type_data  = validated_data.pop('user_type')
+		user_type_name = user_type_data.get('name', '')
+		try:
+			group = Group.objects.get(name=user_type_name)
+			instance.user_type = group
+			user.groups.add(group)
+		except Groups.DoesNotExist:
+			pass
 		user.first_name = user_data.get('first_name', user.first_name)
 		user.last_name = user_data.get('last_name', user.first_name)
 		user.email = user_data.get('email', user.email)
