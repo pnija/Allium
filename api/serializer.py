@@ -3,9 +3,8 @@ from rest_framework import serializers
 from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST
 
 from django.contrib.auth.models import User, Group
-from api.models import UserProfile, OneTimePassword, Country, State
+from api.models import UserProfile, OneTimePassword, Country, State, PasswordResetVerification
 import re
-
 
 class CountrySerializer(ModelSerializer):
 	"""
@@ -112,12 +111,44 @@ class AccountActivationSerializer(serializers.Serializer):
 		return value
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+	"""
+	Serializer for Change password.
+	"""
+	old_password = serializers.CharField(required=True)
+	new_password = serializers.CharField(required=True)
+
+
+class UsermailSerializer(serializers.Serializer):
+	email = serializers.EmailField(required=True)
+
+	def validate_email(self, value):
+		if User.objects.filter(email=value).exists():
+			return value
+		else:
+			raise serializers.ValidationError('User does not exist !.')
+
+
 class ResetPasswordSerializer(serializers.Serializer):
 	"""
 	Serializer for password Reset.
 	"""
-	old_password = serializers.CharField(required=True)
-	new_password = serializers.CharField(required=True)
+	password_1 = serializers.CharField(required=True, write_only=True)
+	password_2 = serializers.CharField(required=True, write_only=True)
+	verification_key = serializers.CharField(required=True, write_only=True)
+
+	def validate(self, data):
+		password_1 = data.get('password_1')
+		password_2 = data.get('password_2')
+		key = data.get('verification_key')
+		if password_1 == password_2:
+			if PasswordResetVerification.objects.filter(verification_key = key).exists():
+				# need check key-expr-time here
+				return super(ResetPasswordSerializer, self).validate(data)
+			else:
+				raise serializers.ValidationError("Invalid verification key.")
+		else:
+			raise serializers.ValidationError("Password not matching.")
 
 
 class OTPSerializer(serializers.Serializer):

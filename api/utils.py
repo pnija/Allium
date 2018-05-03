@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.core.mail import send_mail
-from api.models import UserSetting, OneTimePassword
+from api.models import UserSetting, OneTimePassword, PasswordResetVerification
 from api.models import GOOGLE_AUTH, EMAIL_OTP, SMS_OTP
 import uuid
 
@@ -21,7 +21,7 @@ def send_verification_key(key, user):
 	return 'Account Activation code sent to your email address - '+ str(user.email) +'. Thank you'
 
 
-def send_otp(otp_object, user):	
+def send_otp(otp_object, user):
 	body = 'Your One Time Password is '+str(otp_object.otp)
 	subject = 'Allium One Time Password(OTP)'
 	email = EmailMessage(subject, body, settings.DEFAULT_FROM_EMAIL, (user.email,))
@@ -63,6 +63,28 @@ def authenticate_2fa(user):
 		return mail_status
 	else:
 		return "Invalid 2fa setting"
+
+
+def send_password_verification_key(user):
+	key = uuid.uuid4().hex[:6].upper()
+	pswd_reset_obj, created = PasswordResetVerification.objects.get_or_create(user=user)
+	pswd_reset_obj.verification_key = key
+	pswd_reset_obj.save()
+
+	body = 'Your Password verification Key is : '+str(key)
+	subject = 'Password Verification key'
+	email = EmailMessage(subject, body, settings.DEFAULT_FROM_EMAIL, (user.email,))
+	email.content_subtype = 'html'
+
+	try:
+		email.send()
+	except Exception as e:
+		print(e.strerror)
+		return  str(e.strerror)
+	return "Password Verification Key to change-password is sent to your mailID "+str(user.email)
+
+
+
 
 
 # def enable_efa(method_2fa):

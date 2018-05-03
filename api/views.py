@@ -18,7 +18,7 @@ from django.db.models import Q
 from api.models import UserProfile, OneTimePassword, UserSetting, GoogleAuthenticator
 from api.models import GOOGLE_AUTH, EMAIL_OTP, SMS_OTP
 from api.serializer import *
-from api.utils import send_verification_key, send_otp, authenticate_2fa
+from api.utils import send_verification_key, send_otp, authenticate_2fa, send_password_verification_key
 from api.custom_permissions.permissions import PartnerAccessPermission, AdminAccessPermission
 import uuid
 import pyotp
@@ -302,8 +302,9 @@ class RegisterUserProfileView(ModelViewSet):
 			return Response({'email':user.email,'status': mail_status})
 
 
-class ResetPassword(UpdateAPIView):
-	serializer_class = ResetPasswordSerializer
+class ChangePassword(UpdateAPIView):
+	serializer_class = ChangePasswordSerializer
+	permission_classes = [AdminAccessPermission]
 	http_method_names = ['put']
 	model = User
 
@@ -322,6 +323,47 @@ class ResetPassword(UpdateAPIView):
 			self.object.save()
 			return Response("Success.", status=status.HTTP_200_OK)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ForgotPassword(GenericAPIView):
+	permission_classes = [AllowAny]
+	serializer_class = UsermailSerializer
+	http_method_names = ['post']
+
+	def post(self, request, *args, **kwargs):
+		serializer = self.get_serializer(data=request.data)
+		if serializer.is_valid():
+			email = serializer.data.get("email")
+			user = User.objects.get(email=email)
+			status = send_password_verification_key(user)
+			return Response({
+				"status" : "success",
+				"message": status
+				})
+		else:
+			return Response("There is no user with this mailID "+str(email))
+
+
+class ResetPassword(GenericAPIView):
+	permission_classes = [AllowAny]
+	serializer_class = ResetPasswordSerializer
+	http_method_names = ['post']
+
+	def post(self, request, *args, **kwargs):
+		serializer = self.get_serializer(data=request.data)
+		if serializer.is_valid():
+			password = serializer.validated_data.get("password_1")
+			key = serializer.validated_data.get("verification_key")
+			pswd_reset_obj = PasswordResetVerification.objects.get(verification_key=key)
+			user = pswd_reset_obj.user
+			user.set_password(password)
+			user.save()
+			return Response({
+				"status" : "success",
+				"message": "Password Reset Succesfully"
+				})
+		Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class ActivateAccountView(UpdateAPIView):
@@ -456,3 +498,17 @@ class UpdateUserTypeView(ModelViewSet):
 			serializer = self.get_serializer([instance], many=True)
 			return Response(serializer.data)
 		return Response('Invalid Data.')
+
+
+class DeleteUserProfile(ModelViewSet):
+	queryset = UserProfile.objects.all()
+	serializer_class = ProfileSerializer
+	permission_classes = [AllowAny]
+	http_method_names = ['delete']
+
+	def delete(self, request, pk, format=None):
+		snippet = self.get_object(pk)
+		snippet.delete()
+		return Response({
+			"status" : "success",
+			})
