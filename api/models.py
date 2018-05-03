@@ -60,7 +60,6 @@ class UserSetting(models.Model):
 	def __str__(self):
 		return ("{}, {}, {}").format(self.user, self.method_2fa, self.enable_2fa)
 
-
 class GoogleAuthenticator(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
 	google_2fa_key = models.CharField(max_length=50)
@@ -68,11 +67,3 @@ class GoogleAuthenticator(models.Model):
 	def __str__(self):
 		return ("{}, {}").format(self.user, self.google_2fa_key)
 
-
-class PasswordResetVerification(models.Model):
-	user = models.ForeignKey(User, on_delete=models.CASCADE)
-	verification_key = models.CharField(max_length=50)
-	created_at = models.DateTimeField(auto_now_add=True, blank=True)
-
-	def __str__(self):
-		return ("{}, {}").format(self.user, self.verification_key)
