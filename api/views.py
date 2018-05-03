@@ -406,10 +406,14 @@ class SearchListView(GenericAPIView):
 			elif field_name == 'email':
 				return Response({ 
 						"field" : field_name,
-						"data":  profile_object.user.email})				
+						"data":  profile_object.user.email})
 			elif field_name == 'profile':
 				serializer = self.get_serializer(profile_object)
 				return Response(serializer.data)
+			elif field_name == 'name':
+				return Response({ 
+						"field" : field_name,
+						"data":  str(profile_object.user.first_name)+" "+str(profile_object.user.last_name)})
 			else:
 				continue				
 		return Response({"status" : "failed",
