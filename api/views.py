@@ -397,6 +397,14 @@ class SearchListView(GenericAPIView):
 			elif field_name == 'profile':
 				serializer = self.get_serializer(profile_object)
 				return Response(serializer.data)
+			elif field_name == 'state':
+				return Response({ 
+						"field" : field_name,
+						"data":  profile_object.state.state})
+			elif field_name == 'country':
+				return Response({ 
+						"field" : field_name,
+						"data":  profile_object.country.country})
 			elif field_name == 'name':
 				return Response({ 
 						"field" : field_name,
