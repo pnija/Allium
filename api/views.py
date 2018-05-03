@@ -341,7 +341,7 @@ class ForgotPassword(GenericAPIView):
 				"message": status
 				})
 		else:
-			return Response("There is no user with this mailID "+str(email))
+			return Response("There is no user with this mailID")
 
 
 class ResetPassword(GenericAPIView):
@@ -503,7 +503,7 @@ class UpdateUserTypeView(ModelViewSet):
 class DeleteUserProfile(ModelViewSet):
 	queryset = UserProfile.objects.all()
 	serializer_class = ProfileSerializer
-	permission_classes = [AllowAny]
+	permission_classes = [AdminAccessPermission]
 	http_method_names = ['delete']
 
 	def delete(self, request, pk, format=None):
