@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST
 
 from django.contrib.auth.models import User, Group
-from api.models import UserProfile, OneTimePassword, Country, State, PasswordResetVerification
+from api.models import *
 import re
 
 class CountrySerializer(ModelSerializer):
