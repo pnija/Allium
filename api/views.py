@@ -219,7 +219,7 @@ class UserProfileView(ModelViewSet):
 	http_method_names = ['get', 'patch']
 
 	def get_object(self):
-		obj = User.objects.get(user=self.rquest.user)
+		obj = UserProfile.objects.get(user=self.rquest.user)
 		return obj
 
 	def update(self, request, *args, **kwargs):
@@ -423,7 +423,7 @@ class SearchListView(GenericAPIView):
 class UserListViewSet(ModelViewSet):
 	queryset = UserProfile.objects.all()
 	serializer_class = ProfileSerializer
-	permission_classes = [AdminAccessPermission, PartnerAccessPermission]
+	permission_classes = [AdminAccessPermission]
 	http_method_names = ['get']
 
 	def get_queryset(self):
