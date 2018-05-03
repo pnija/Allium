@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.core.mail import send_mail
-from api.models import UserSetting, OneTimePassword, PasswordResetVerification
+from api.models import *
 from api.models import GOOGLE_AUTH, EMAIL_OTP, SMS_OTP
 import uuid
 
