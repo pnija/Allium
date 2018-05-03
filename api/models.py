@@ -49,7 +49,7 @@ class UserProfile(models.Model):
 	activation_key = models.CharField(max_length=50, null=True)
 
 	def __str__(self):
-		return ("{}").format(self.full_name)
+		return ("{}").format(self.user.username)
 
 
 class UserSetting(models.Model):

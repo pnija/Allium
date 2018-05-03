@@ -11,15 +11,18 @@ class CountrySerializer(ModelSerializer):
 	"""
 	Serializer for Country.
 	"""
+	id = serializers.IntegerField()
+
 	class Meta:
 		model = Country
 		fields = ['id','country']
 
 
 class StateSerializer(ModelSerializer):
+	id = serializers.IntegerField()
 	class Meta:
 		model = State
-		fields = ['state',]
+		fields = ['id', 'state']
 
 
 class UserTypeSerializer(ModelSerializer):
@@ -63,6 +66,7 @@ class UserProfileSerializer(ModelSerializer):
 
 	class Meta:
 		model = UserProfile
+		extra_kwargs = {'password': {'write_only': True}}
 		fields = ['first_name', 'last_name', 'username', 'email', 'password', 'user_type', 'country', 'mobile_number', 'pincode', 'street_address',
 					'landmark', 'city', 'state' ]
 
@@ -142,14 +146,12 @@ class EmailOTPSerializer(ModelSerializer):
 		fields = ['otp']
 
 
-
-
 class UserSerializer(serializers.ModelSerializer):
 	first_name = serializers.CharField()
 	last_name = serializers.CharField()
 	email = serializers.EmailField(required=True,)
 	username = serializers.CharField()
-	password = serializers.CharField(min_length=8,allow_null=True ,required=False)
+	password = serializers.CharField(min_length=8,allow_null=True ,required=False, write_only=True)
 
 	class Meta:
 		model = User
@@ -160,6 +162,8 @@ class ProfileSerializer(ModelSerializer):
 	
 	user = UserSerializer()
 	user_type = UserTypeSerializer()
+	country = CountrySerializer()
+	state = StateSerializer()
 
 	class Meta:
 		model = UserProfile
@@ -171,19 +175,33 @@ class ProfileSerializer(ModelSerializer):
 		user_data = validated_data.pop('user')
 		user = instance.user
 
-		user_type_data  = validated_data.pop('user_type')
-		user_type_name = user_type_data.get('name', '')
+		# Country
+		country_data  = validated_data.pop('country')
+		country_id = country_data.get('id', '')
+		
 		try:
-			group = Group.objects.get(name=user_type_name)
-			instance.user_type = group
-			user.groups.add(group)
-		except Groups.DoesNotExist:
+			country = Country.objects.get(id=country_id)
+			instance.country = country
+		except:
 			pass
+
+		# State
+		state_data  = validated_data.pop('state')
+		state_id = state_data.get('id', '')
+		
+		try:
+			state = State.objects.get(id=state_id)
+			instance.state = state
+		except:
+			pass
+
+		# User:
 		user.first_name = user_data.get('first_name', user.first_name)
 		user.last_name = user_data.get('last_name', user.first_name)
 		user.email = user_data.get('email', user.email)
 		user.username = user_data.get('email', user.username)
 		user.save()
+		# UserProfile
 		instance.mobile_number = validated_data.get('mobile_number', instance.mobile_number)
 		instance.pincode = validated_data.get('pincode', instance.pincode)
 		instance.street_address = validated_data.get('street_address', instance.street_address)
@@ -215,3 +233,27 @@ class ProfileSerializer(ModelSerializer):
 		if len(value) != 10:
 			raise serializers.ValidationError('Invalid Mobile number')
 		return value
+
+
+class UpdateUserTypeSerializer(ModelSerializer):
+	
+	user_type = UserTypeSerializer()
+
+	class Meta:
+		model = UserProfile
+		fields = ['id', 'user_type' ]
+		depth = 1
+
+	def update(self, instance, validated_data):
+		user = instance.user
+		user_type_data  = validated_data.pop('user_type')
+		user_type_name = user_type_data.get('name', '')
+		
+		try:
+			group = Group.objects.get(name=user_type_name)
+			instance.user_type = group
+			instance.save()
+			user.groups.add(group)
+		except Group.DoesNotExist:
+			return serializers.ValidationError('Invalid User Type')		
+		return instance

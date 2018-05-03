@@ -19,7 +19,7 @@ from api.models import UserProfile, OneTimePassword, UserSetting, GoogleAuthenti
 from api.models import GOOGLE_AUTH, EMAIL_OTP, SMS_OTP
 from api.serializer import *
 from api.utils import send_verification_key, send_otp, authenticate_2fa
-from api.custom_permissions.customer_permissions import CustomerAccessPermission
+from api.custom_permissions.permissions import PartnerAccessPermission, AdminAccessPermission
 import uuid
 import pyotp
 
@@ -136,21 +136,18 @@ class Disable2faView(GenericAPIView):
 		user = request.user
 		try:
 			user_setting = UserSetting.objects.get(user = request.user)
-			user_setting.enable_2fa = False
-			user_setting.save()
-		except UserSetting.DoesNotExist:
-			user_setting = ''
-		
-		if user_setting:
+			user_setting.delete()
 			return Response({
 				'status' : 'success',
 				'message' : 'Disabled 2FA.'
 				})
-		else:			
-			return Response({
-				'status' : 'failed',
-				'message' : 'User not yet enabled Google Athentication !'
-				})
+		except UserSetting.DoesNotExist:
+			user_setting = ''
+		
+		return Response({
+			'status' : 'failed',
+			'message' : 'User not yet enabled Google Athentication !'
+			})
 
 
 class Authenticate2faView(GenericAPIView):
@@ -374,7 +371,7 @@ class UpdateProfileView(ModelViewSet):
 	def get_queryset(self):
 		pk = self.kwargs.get('pk', '')
 		if pk:
-			return UserProfile.objects.filter(id=pk)
+			return UserProfile.objects.filter(pk=pk)
 		return UserProfile.objects.filter(user=self.request.user)
 
 	def update(self, request, *args, **kwargs):
@@ -388,34 +385,65 @@ class UpdateProfileView(ModelViewSet):
 		return Response('Invalid Data.')
 
 
-class UserListView(GenericAPIView):
+class SearchListView(GenericAPIView):
 	http_method_names = ['get']
 	serializer_class = ProfileSerializer
-	permission_classes = [CustomerAccessPermission]
+	permission_classes = [PartnerAccessPermission]
 
 	def get(self, request, *args, **kwargs):
-		user = request.user
-		if user.groups.filter(name='Customer').exists():
-			search_val = self.kwargs.get('search', '')
-			q1 = Q(user__first_name=search_val)
-			q2 = Q(user__last_name=search_val)
-			q3 = Q(user__email=search_val)
-			q4 = Q(mobile_number=search_val)
+		profile_id = self.kwargs.get('profile_id', '')
+		field_name = self.kwargs.get('field_name', '')
+		
+		try:
+			profile_object = UserProfile.objects.get(id=profile_id)			
+		except UserProfile.DoesNotExist:
+			return Response(" Invalid profile_id ! ")
+		for attr, value in profile_object.__dict__.items():
+			if attr == field_name:
+				return Response({ 
+						"field" : field_name,
+						"data": value })
+			elif field_name == 'email':
+				return Response({ 
+						"field" : field_name,
+						"data":  profile_object.user.email})				
+			elif field_name == 'profile':
+				serializer = self.get_serializer(profile_object)
+				return Response(serializer.data)
+			else:
+				continue				
+		return Response({"status" : "failed",
+				"message" : "Invalid field name"})
 
-			try:
-				value = int(search_val)
-				q5 = Q(pincode=value)
-			except ValueError:
-				q5 = Q(pincode=0)
 
-			q6 = Q(street_address=search_val)
-			q7 = Q(landmark=search_val)
-			q8 = Q(city=search_val)
-			query = q1|q2|q3|q4|q5|q6|q7|q8
-			userlist = UserProfile.objects.filter(query)
-			serializer = self.get_serializer(userlist, many=True)
+class UserListViewSet(ModelViewSet):
+	queryset = UserProfile.objects.all()
+	serializer_class = ProfileSerializer
+	permission_classes = [AdminAccessPermission, PartnerAccessPermission]
+	http_method_names = ['get']
+
+	def get_queryset(self):
+		if not self.request.user.is_anonymous:
+			users_list = UserProfile.objects.all().exclude(user=self.request.user)
+			return users_list
+		return self.queryset
+
+
+class UpdateUserTypeView(ModelViewSet):
+	queryset = UserProfile.objects.all()
+	serializer_class = UpdateUserTypeSerializer
+	permission_classes = [AdminAccessPermission]
+	http_method_names = ['patch']
+
+	def update(self, request, *args, **kwargs):
+		pk = self.kwargs.get('pk', '')
+		try:
+			instance = UserProfile.objects.get(id=pk)
+		except UserProfile.DoesNotExist:
+			return Response('Invalid ID.')
+		serializer = UpdateUserTypeSerializer(instance, data=request.data, partial=True)
+		if serializer.is_valid():
+			serializer.save()
+			serializer = self.get_serializer([instance], many=True)
 			return Response(serializer.data)
-		else:
-			return Response({
-				'You have no permissions to view user details'
-				})
+		return Response('Invalid Data.')
