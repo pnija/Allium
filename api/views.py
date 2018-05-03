@@ -137,6 +137,8 @@ class Disable2faView(GenericAPIView):
 		try:
 			user_setting = UserSetting.objects.get(user = request.user)
 			user_setting.delete()
+			if GoogleAuthenticator.objects.filter(user = request.user).exists():
+				GoogleAuthenticator.objects.get(user = request.user).delete()
 			return Response({
 				'status' : 'success',
 				'message' : 'Disabled 2FA.'
