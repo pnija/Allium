@@ -427,9 +427,17 @@ class UserListViewSet(ModelViewSet):
 	http_method_names = ['get']
 
 	def get_queryset(self):
-		if not self.request.user.is_anonymous:
-			users_list = UserProfile.objects.all().exclude(user=self.request.user)
+		pk = self.kwargs.get('pk', '')
+		if pk:
+			try:
+				users_list = UserProfile.objects.filter(pk=pk)				
+			except:
+				users_list = self.queryset
 			return users_list
+		else:
+			if not self.request.user.is_anonymous:
+				users_list = UserProfile.objects.all().exclude(user=self.request.user)
+				return users_list
 		return self.queryset
 
 
