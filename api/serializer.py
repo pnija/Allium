@@ -197,7 +197,7 @@ class ProfileSerializer(ModelSerializer):
 
 		# User:
 		user.first_name = user_data.get('first_name', user.first_name)
-		user.last_name = user_data.get('last_name', user.first_name)
+		user.last_name = user_data.get('last_name', user.last_name)
 		user.email = user_data.get('email', user.email)
 		user.username = user_data.get('email', user.username)
 		user.save()

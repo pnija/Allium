@@ -213,23 +213,6 @@ class Authenticate2faView(GenericAPIView):
 			})
 
 
-class UserProfileView(ModelViewSet):
-	queryset = UserProfile.objects.all()
-	serializer_class = UserProfileSerializer
-	http_method_names = ['get', 'patch']
-
-	def get_object(self):
-		obj = UserProfile.objects.get(user=self.rquest.user)
-		return obj
-
-	def update(self, request, *args, **kwargs):
-		self.object = self.get_object()
-		serializer = self.get_serializer(data=request.data)
-
-		if serializer.is_valid():
-			return Response("Success.update")
-
-
 class UserTypeListViewSet(ModelViewSet):
 	queryset = Group.objects.all()
 	serializer_class = UserTypeSerializer
@@ -375,8 +358,12 @@ class UpdateProfileView(ModelViewSet):
 		return UserProfile.objects.filter(user=self.request.user)
 
 	def update(self, request, *args, **kwargs):
-		user = self.request.user
-		instance = UserProfile.objects.get(user=user)
+		pk = self.kwargs.get('pk', '')
+		if pk:
+			instance = UserProfile.objects.get(pk=pk)
+		else:
+			user = self.request.user
+			instance = UserProfile.objects.get(user=user)
 		serializer = ProfileSerializer(instance, data=request.data, partial=True)
 		if serializer.is_valid():
 			serializer.save()
