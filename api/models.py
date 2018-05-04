@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 # Create your models here.
 
 GOOGLE_AUTH = 'google_auth'
@@ -48,9 +50,13 @@ class UserProfile(models.Model):
 	state = models.ForeignKey(State, on_delete=models.CASCADE, null=True)
 	activation_key = models.CharField(max_length=50, null=True)
 
+	@receiver(post_delete, sender='api.UserProfile')
+	def increment_roomtype(instance, **kwargs):
+		instance.user.delete()
+
 	def __str__(self):
 		return ("{}").format(self.user.username)
-
+	
 
 class UserSetting(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
