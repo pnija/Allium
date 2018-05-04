@@ -284,6 +284,7 @@ class UpdateUserTypeSerializer(ModelSerializer):
 			group = Group.objects.get(name=user_type_name)
 			instance.user_type = group
 			instance.save()
+			user.groups.clear()
 			user.groups.add(group)
 		except Group.DoesNotExist:
 			return serializers.ValidationError('Invalid User Type')		
