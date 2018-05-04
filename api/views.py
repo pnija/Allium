@@ -283,11 +283,11 @@ class RegisterUserProfileView(ModelViewSet):
 			user.is_active = False
 			user.save()
 
-			# try:
-			# 	group = Group.objects.get(name=user_type)
-			# 	user.groups.add(group)
-			# except Group.DoesNotExist:
-			# 	pass
+			try:
+				group = Group.objects.get(name="Customer")
+				user.groups.add(group)
+			except Group.DoesNotExist:
+				pass
 
 			dict_data = serializer.validated_data.copy()
 			dict_data.update({'user' : user})
