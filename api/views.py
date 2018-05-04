@@ -287,13 +287,14 @@ class RegisterUserProfileView(ModelViewSet):
 				group = Group.objects.get(name="Customer")
 				user.groups.add(group)
 			except Group.DoesNotExist:
-				pass
+				group = ''
 
 			dict_data = serializer.validated_data.copy()
 			dict_data.update({'user' : user})
 			
 			user_profile = UserProfile.objects.create(**dict_data)
 			user_profile.full_name = first_name + ' ' + last_name
+			user_profile.user_type = group
 			user_profile.activation_key = uuid.uuid4().hex[:6].upper()			
 			user_profile.save()
 			print("----------->  ",user_profile.activation_key )
