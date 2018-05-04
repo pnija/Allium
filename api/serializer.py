@@ -60,13 +60,13 @@ class UserProfileSerializer(ModelSerializer):
 	username = serializers.CharField()
 	email = serializers.EmailField()
 	password = serializers.CharField()
-	user_type = serializers.CharField(source='user_type.name',required=False)
+	# user_type = serializers.CharField(source='user_type.name',required=False)
 
 
 	class Meta:
 		model = UserProfile
 		extra_kwargs = {'password': {'write_only': True}}
-		fields = ['first_name', 'last_name', 'username', 'email', 'password', 'user_type', 'country', 'mobile_number', 'pincode', 'street_address',
+		fields = ['first_name', 'last_name', 'username', 'email', 'password', 'country', 'mobile_number', 'pincode', 'street_address',
 					'landmark', 'city', 'state' ]
 
 	def validate_email(self, value):

@@ -304,7 +304,6 @@ class RegisterUserProfileView(ModelViewSet):
 
 class ChangePassword(UpdateAPIView):
 	serializer_class = ChangePasswordSerializer
-	permission_classes = [AdminAccessPermission]
 	http_method_names = ['put']
 	model = User
 
