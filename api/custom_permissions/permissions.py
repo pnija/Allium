@@ -38,8 +38,12 @@ class AdminAccessPermission(permissions.BasePermission):
 		Return `True` if permission is granted, `False` otherwise.
 		"""		
 		if not request.user.is_anonymous:
-			if self.is_admin(request.user):
+			
+			if request.user.is_superuser:
 				return True
+			else:
+				if self.is_admin(request.user):
+					return True
 		return False
 
 	def has_object_permission(self, request, view, obj):
@@ -47,6 +51,10 @@ class AdminAccessPermission(permissions.BasePermission):
 		Return `True` if permission is granted, `False` otherwise.
 		"""
 		if not request.user.is_anonymous:
-			if self.is_admin(request.user):
+			
+			if request.user.is_superuser:
 				return True
+			else:
+				if self.is_admin(request.user):
+					return True
 		return False
