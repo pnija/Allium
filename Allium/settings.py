@@ -166,9 +166,9 @@ EMAIL_USE_TLS = True
 
 EMAIL_HOST = 'smtp.gmail.com'
 
-EMAIL_HOST_USER = 'joblejose1@gmail.com'
+EMAIL_HOST_USER = 'alliumapis@gmail.com'
 
-EMAIL_HOST_PASSWORD = 'techversant'
+EMAIL_HOST_PASSWORD = 'allium@123'
 
 EMAIL_PORT = 587
 

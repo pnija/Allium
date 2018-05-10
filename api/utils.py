@@ -17,7 +17,7 @@ def send_verification_key(key, user):
 		email.send()
 	except Exception as e:
 		print(e.strerror)
-		return  str(e.strerror)
+		return  str("Failed to send verification code please contact admin")
 	return 'Account Activation code sent to your email address - '+ str(user.email) +'. Thank you'
 
 
