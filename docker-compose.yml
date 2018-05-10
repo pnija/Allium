@@ -1,0 +1,29 @@
+
+version: '3'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: ng01
+    ports:
+      - "80:80"
+    volumes:
+      - .:/code
+      - ./config/nginx:/etc/nginx/conf.d
+    depends_on:
+      - web
+  
+  db:
+    image: mongo
+    ports:
+        - "27017:27017"
+  
+  web:
+    build: .
+    command: bash -c "python3 manage.py migrate && python3 manage.py initial_setup && python3 manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/code
+    depends_on:
+      - db
+    expose:
+      - "8000"
