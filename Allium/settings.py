@@ -99,7 +99,8 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'djongo',
-            'NAME': 'allium__db',
+            'NAME': 'allium_database',
+            'HOST': 'db',
         }
     }
     DEBUG = True
