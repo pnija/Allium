@@ -16,6 +16,7 @@ urlpatterns = [
     url(r'^change-password/', ChangePassword.as_view(), name='change-password'),
     url(r'^forgot-password/', ForgotPassword.as_view(), name='forgot-password'),
     url(r'^reset-password/', ResetPassword.as_view(), name='reset-password'),
-    url(r'^activate-account/', ActivateAccountView.as_view(), name='activate-account'),    
+    url(r'^activate-account/', ActivateAccountView.as_view(), name='activate-account'),
+    url(r'^activate-google_auth/', ActivateGoogleAuthView.as_view(), name='activate-google_auth'),
     # url(r'^users/(?P<search>[\w\+]+)$', UserListView.as_view(), name='search-users'),
 ]

@@ -24,30 +24,55 @@ import uuid
 import pyotp
 
 
-class AuthTokenView(ObtainAuthToken):
-	permission_classes = [AllowAny]
 
-	def post(self, request, *args, **kwargs):
-		serializer = self.serializer_class(data=request.data, context={'request': request})
-		serializer.is_valid(raise_exception=True)
-		user = serializer.validated_data['user']
-		user_settings, created = UserSetting.objects.get_or_create(user=user)
+class AuthTokenView(ObtainAuthToken):
+	
+	def post(self, request):
+		response = {}
+		username = request.data.get("username")
+		password = request.data.get("password")
+		registered_user = ''
 		
-		if user_settings.enable_2fa:
-			status_2fa = authenticate_2fa(user)
-			return Response({
-				'status' : 'success',
-				'message' : status_2fa,
-				'user_id' : user.pk
-				})
+		try:
+			user = User.objects.get(username=username)
+		except User.DoesNotExist:
+			response['status'] = 'failed'
+			response['message'] = 'Invalid username'
+			return Response(response, status=HTTP_401_UNAUTHORIZED)
+		
+		if user:
+			if user.is_active:
+				registered_user = authenticate(username=user.username, password=password)
+			else:
+				response['status'] = 'failed'
+				response['message'] = 'User not activated'
+				return Response(response, status=HTTP_401_UNAUTHORIZED)
 		else:
-			token, created = Token.objects.get_or_create(user=user)
-			return Response({
-				'status' : 'success',
-				'token': token.key,
-				'user_id': user.pk,
-				'email': user.email
-				})
+			response['status'] = 'failed'
+			response['message'] = 'Login failed'
+			return Response(response, status=HTTP_401_UNAUTHORIZED)
+
+		if registered_user:
+			user_settings, created = UserSetting.objects.get_or_create(user=user)			
+			if user_settings.enable_2fa:
+				status_2fa = authenticate_2fa(user)
+				return Response({
+					'status' : 'success',
+					'message' : status_2fa,
+					'user_id' : user.pk
+					})
+			else:
+				token, created = Token.objects.get_or_create(user=user)
+				return Response({
+					'status' : 'success',
+					'token': token.key,
+					'user_id': user.pk,
+					'email': user.email
+					})
+
+		response['status'] = 'failed'
+		response['message'] = 'Login failed'
+		return Response(response, status=HTTP_401_UNAUTHORIZED)
 
 
 class Logout(APIView):
@@ -66,7 +91,6 @@ class Enable2faView(GenericAPIView):
 		method_2fa = self.kwargs.get('auth_method', '')
 
 		user_setting, created = UserSetting.objects.get_or_create(user = request.user)
-		user_setting.enable_2fa = True
 
 		if method_2fa == GOOGLE_AUTH:
 			user_setting.method_2fa = GOOGLE_AUTH
@@ -77,7 +101,7 @@ class Enable2faView(GenericAPIView):
 			except GoogleAuthenticator.DoesNotExist:
 				google_auth_object = None
 			
-			if not google_auth_object:
+			if not google_auth_object:				
 				google_2fa_key = pyotp.random_base32()
 				google_auth_object = GoogleAuthenticator.objects.create(
 					user= request.user,
@@ -95,6 +119,7 @@ class Enable2faView(GenericAPIView):
 					})
 
 		elif method_2fa == EMAIL_OTP:
+			user_setting.enable_2fa = True
 			user_setting.method_2fa = EMAIL_OTP
 			user_setting.save()
 
@@ -215,6 +240,45 @@ class Authenticate2faView(GenericAPIView):
 			})
 
 
+class ActivateGoogleAuthView(GenericAPIView):
+	serializer_class = ActivateGoogleAuthSerializer
+	permission_classes = [AllowAny]
+	http_method_names = ['post']
+
+	def post(self, request, format=None):		
+		serializer = self.serializer_class(data=request.data, context={'request': request})
+		serializer.is_valid(raise_exception=True)
+		
+		if serializer.validated_data:
+			email = request.data.get('email')
+			otp_code = request.data.get('otp')
+			user = User.objects.get(email=email)
+			user_setting = UserSetting.objects.get(user=user)			
+			try:
+				user_auth_object = GoogleAuthenticator.objects.get(user=user)				
+			except GoogleAuthenticator.DoesNotExist:
+				return Response({
+					'status' : 'failed',
+					'message' : 'Please enable Google Authenticator',
+					})
+
+			google_2fa_key = user_auth_object.google_2fa_key
+			totp = pyotp.TOTP(google_2fa_key)
+
+			if totp.verify(otp_code):
+				user_setting.enable_2fa = True
+				user_setting.save()
+				return Response({
+					'status' : 'success',
+					'message' : 'Succesfully Activated 2FA with Google Authentication',
+					})
+
+			return Response({
+				'status' : 'failed',
+				'message' : 'Wrong OTP',
+				})
+
+
 class UserTypeListViewSet(ModelViewSet):
 	queryset = Group.objects.all()
 	serializer_class = UserTypeSerializer
@@ -297,9 +361,9 @@ class RegisterUserProfileView(ModelViewSet):
 			user_profile.user_type = group
 			user_profile.activation_key = uuid.uuid4().hex[:6].upper()			
 			user_profile.save()
-			print("----------->  ",user_profile.activation_key )
+			print("----------->  ", user_profile.activation_key )
 			mail_status = send_verification_key(user_profile.activation_key, user_profile.user)
-
+			
 			return Response({'email':user.email,'status': mail_status})
 
 

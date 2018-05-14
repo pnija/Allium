@@ -111,6 +111,22 @@ class AccountActivationSerializer(serializers.Serializer):
 		return value
 
 
+class ActivateGoogleAuthSerializer(serializers.Serializer):
+	"""
+	Serializer for Activate
+	 Google Auth.
+	"""
+	otp = serializers.CharField(required=True)
+	email = serializers.EmailField(required=True)
+
+	def validate_email(self, value):
+		try:
+			user = User.objects.get(email=value)
+		except User.DoesNotExist:
+			raise serializers.ValidationError('No user registered with this EmailID -"'+ value +'"' )
+		return value
+
+
 class ChangePasswordSerializer(serializers.Serializer):
 	"""
 	Serializer for Change password.
