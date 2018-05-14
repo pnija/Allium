@@ -193,12 +193,20 @@ class Authenticate2faView(GenericAPIView):
 			user_setting = UserSetting.objects.get(user=user)
 
 			if user_setting.method_2fa == GOOGLE_AUTH:
+
 				try:
 					user_auth_object = GoogleAuthenticator.objects.get(user=user)				
 				except GoogleAuthenticator.DoesNotExist:
 					return Response({
 						'status' : 'failed',
 						'message' : 'Please enable Google Authenticator',
+						})
+
+				if not user_setting.enable_2fa:
+					return Response({
+						'status' : 'failed',
+						'message' : 'Google Authenticator 2FA is not activated!',
+						'Verification_key' : user_auth_object.google_2fa_key,
 						})
 
 				google_2fa_key = user_auth_object.google_2fa_key
@@ -242,7 +250,6 @@ class Authenticate2faView(GenericAPIView):
 
 class ActivateGoogleAuthView(GenericAPIView):
 	serializer_class = ActivateGoogleAuthSerializer
-	permission_classes = [AllowAny]
 	http_method_names = ['post']
 
 	def post(self, request, format=None):		
@@ -363,7 +370,7 @@ class RegisterUserProfileView(ModelViewSet):
 			user_profile.save()
 			print("----------->  ", user_profile.activation_key )
 			mail_status = send_verification_key(user_profile.activation_key, user_profile.user)
-			
+
 			return Response({'email':user.email,'status': mail_status})
 
 
