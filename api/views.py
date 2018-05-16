@@ -330,7 +330,7 @@ class StateListViewSet(ModelViewSet):
 	def list(self, request, *args, **kwargs):
 		queryset = self.filter_queryset(self.get_queryset())
 		if not queryset:
-			return Response('No Country found', status=HTTP_400_BAD_REQUEST)
+			return Response('No state found', status=HTTP_400_BAD_REQUEST)
 		serializer = self.get_serializer(queryset, many=True)
 		return Response(serializer.data)
 
