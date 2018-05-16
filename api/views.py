@@ -370,7 +370,6 @@ class RegisterUserProfileView(ModelViewSet):
 			dict_data = serializer.validated_data.copy()
 			dict_data.update({'user' : user})
 
-
 			# country 
 			country = serializer.validated_data.pop('country', '')			
 			if not country:
@@ -520,11 +519,17 @@ class SearchListView(GenericAPIView):
 			profile_object = UserProfile.objects.get(id=profile_id)			
 		except UserProfile.DoesNotExist:
 			return Response(" Invalid profile_id ! ")
+			
+		# Name, Email, Mobile, Pincode, Street address, Landmark and City	
+		# print("Field Name :", field_name)
+		# print("Value", getattr(profile_object, field_name)
+
 		for attr, value in profile_object.__dict__.items():
 			if attr == field_name:
 				return Response({ 
 						"field" : field_name,
 						"data": value })
+
 			elif field_name == 'email':
 				return Response({ 
 						"field" : field_name,
@@ -533,13 +538,21 @@ class SearchListView(GenericAPIView):
 				serializer = self.get_serializer(profile_object)
 				return Response(serializer.data)
 			elif field_name == 'state':
+				try:
+					state = profile_object.state.state
+				except Exception as e:
+					state = ''
 				return Response({ 
 						"field" : field_name,
-						"data":  profile_object.state.state})
+						"data": state })
 			elif field_name == 'country':
+				try:
+					country = profile_object.country.country
+				except Exception as e:
+					country = ''
 				return Response({ 
 						"field" : field_name,
-						"data":  profile_object.country.country})
+						"data": country })
 			elif field_name == 'name':
 				return Response({ 
 						"field" : field_name,
