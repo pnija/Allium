@@ -21,7 +21,7 @@ class StateSerializer(ModelSerializer):
 	id = serializers.IntegerField()
 	class Meta:
 		model = State
-		fields = ['id', 'state']
+		fields = ['id', 'country', 'state']
 
 
 class UserTypeSerializer(ModelSerializer):
@@ -86,12 +86,6 @@ class UserProfileSerializer(ModelSerializer):
 		except User.DoesNotExist:
 			return value
 		raise serializers.ValidationError('This username is already in use.')
-
-	# def validate_mobile_number(self, value):
-
-	# 	if len(value) != 10:
-	# 		raise serializers.ValidationError('Invalid Mobile number')
-	# 	return value
 
 
 class AccountActivationSerializer(serializers.Serializer):

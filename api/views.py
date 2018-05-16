@@ -320,12 +320,19 @@ class StateListViewSet(ModelViewSet):
 	permission_classes = [AllowAny]
 	http_method_names = ['get']
 
-	def get_queryset(self):
-		country_id = self.request.GET.get('country')
-		if country_id:
-			self.queryset = State.objects.filter(country__id=country_id)
-			return self.queryset
-		return self.queryset
+	# def get_queryset(self):
+	# 	country_id = self.request.GET.get('id')
+	# 	if country_id:
+	# 		self.queryset = State.objects.filter(country__id=country_id)
+	# 		return self.queryset
+	# 	return self.queryset
+
+	def list(self, request, *args, **kwargs):
+		queryset = self.filter_queryset(self.get_queryset())
+		if not queryset:
+			return Response('No Country found', status=HTTP_400_BAD_REQUEST)
+		serializer = self.get_serializer(queryset, many=True)
+		return Response(serializer.data)
 
 
 class RegisterUserProfileView(ModelViewSet):
@@ -355,14 +362,27 @@ class RegisterUserProfileView(ModelViewSet):
 			user.save()
 
 			try:
-				group = Group.objects.get(name="Customer")
+				group, created_group = Group.objects.get_or_create(name="Customer")
 				user.groups.add(group)
 			except Group.DoesNotExist:
 				group = ''
 
 			dict_data = serializer.validated_data.copy()
 			dict_data.update({'user' : user})
-			
+
+
+			# country 
+			country = serializer.validated_data.pop('country', '')			
+			if not country:
+				country, created_country = Country.objects.get_or_create(country='Other')
+				dict_data.update({'country' : country})
+			# state
+			state = serializer.validated_data.pop('state', '')
+			if not state:
+				country, created_country = Country.objects.get_or_create(country='Other')
+				state, created_state = State.objects.get_or_create(country=country, state='Other')
+				dict_data.update({'state' : state})
+
 			user_profile = UserProfile.objects.create(**dict_data)
 			user_profile.full_name = first_name + ' ' + last_name
 			user_profile.user_type = group
