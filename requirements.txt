@@ -12,7 +12,7 @@ django-cities==0.5.0.6
 django-cities-light==3.4.0
 django-model-utils==3.1.1
 django-rest-swagger==2.1.2
-djangorestframework==3.8.2
+djangorestframework==3.9.1
 djongo==1.2.24
 ez-setup==0.9
 gunicorn==19.7.1
