@@ -35,7 +35,7 @@ swapper==1.1.0
 tqdm==4.23.0
 Unidecode==1.0.22
 uritemplate==3.0.0
-urllib3==1.22
+urllib3==1.26.5
 dj-database-url
 psycopg2
 pyotp==2.2.6
